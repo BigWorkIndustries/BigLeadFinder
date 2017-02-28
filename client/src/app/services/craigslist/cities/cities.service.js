@@ -10,7 +10,7 @@
     ]).service('lfCitiesService', Service);
 
     /** @ngInject */
-    function Service($rootScope,$log) {
+    function Service($rootScope,$log,$q) {
 
         var service = {};
 
@@ -18,6 +18,40 @@
 
             $log.debug('lfCitiesService.updateCities');
 
+            service.openCities().then(function(cl){
+                $log.debug('Got window: ' + cl);
+            });
+
+        };
+
+        service.openCities = function(ready) {
+
+            var deferred = $q.defer();
+
+            $.ajax( "//medialab.github.io/artoo/public/dist/artoo-latest.min.js" )
+                .done(function(data) {
+
+                    var cl = window.open('https://www.craigslist.org/about/sites');
+
+                    $log.debug(cl);
+
+                    $(cl.document).ready(function(){
+
+                        var actualCode = '(' + function() {
+                                window.console.log('Hello World!');
+                            } + ')();';
+                        var script = document.createElement('script');
+                        script.textContent = actualCode;
+                        (cl.document.head||cl.document.documentElement).appendChild(script);
+                        //script.remove();
+
+                        deferred.resolve(cl);
+
+                    });
+
+                });
+
+            return deferred.promise;
         };
 
         return service;
