@@ -4,18 +4,18 @@
 (function () {
     'use strict';
 
-    require('./skus/skus.service');
+    require('./cities/cities.service');
 
     var MODULE_NAME = 'ls.craisglist.service';
 
     angular.module(MODULE_NAME, [
-        'api.skus'
+        'lf.cities.service'
     ]).service('lfCraigslist', Service);
 
     /** @ngInject */
-    function Service(SkusService,$log) {
+    function Service(lfCitiesService,$log) {
 
-        this.skus = SkusService;
+        this.cities = lfCitiesService;
     };
 
     module.exports = MODULE_NAME;

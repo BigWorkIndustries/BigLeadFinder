@@ -9,7 +9,13 @@
     ]).config(Config).controller('DashboardCtrl',Controller);
 
     /* @ngInject */
-    function Controller($log,AppServices) {
+    function Controller($scope,$log,AppServices) {
+
+        $scope.cities = function() {
+
+            AppServices.cl.cities.updateCities();
+
+        };
 
         var Init = function () {
 

@@ -7,19 +7,20 @@
     var MODULE_NAME = 'lf.cities.service';
 
     angular.module(MODULE_NAME,[
-    ]).service('lf_CitiesService', Service);
+    ]).service('lfCitiesService', Service);
 
     /** @ngInject */
-    function Service($rootScope) {
+    function Service($rootScope,$log) {
 
-        var model = {};
+        var service = {};
 
-        model.getDefaultSkus = function (completion) {
+        service.updateCities = function (completion) {
 
+            $log.debug('lfCitiesService.updateCities');
 
         };
 
-        return model;
+        return service;
     };
 
     module.exports = MODULE_NAME;
