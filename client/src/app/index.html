@@ -1,0 +1,28 @@
+<!doctype html>
+<html ng-app="app" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Lead Finder</title>
+    <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no"/>
+
+    <base href="/app/">
+
+</head>
+<body ng-cloak>
+<header>
+    <div ui-view="header"></div>
+</header>
+
+<section layout="row" layout-fill>
+    <div ui-view="sidenav">
+    </div>
+
+    <div ui-view="container" flex layout-padding>
+    </div>
+
+</section>
+
+</body>
+</html>
+
