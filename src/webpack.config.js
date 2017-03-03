@@ -8,7 +8,9 @@ var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var CopyWebpackPlugin = require('copy-webpack-plugin');
 var ngAnnotatePlugin = require('ng-annotate-webpack-plugin');
 var ElectronPlugin = require("electron-webpack-plugin");
+//var ElectronConnectWebpackPlugin = require('electron-connect-webpack-plugin');
 var WriteFilePlugin = require('write-file-webpack-plugin');
+var path = require("path");
 
 /**
  * Env
@@ -33,7 +35,11 @@ var clientConfig = function makeWebpackClientConfig() {
      * Karma will set this when it's a test build
      */
     config.entry = isTest ? {} : {
-        app: ["webpack-dev-server/client?http://localhost:8080",'./app/app.js']
+        //app: ["webpack-dev-server/client?http://localhost:8080",'./app/app.js'],
+        //app: './app/app.js',
+        "renderer": ["webpack-dev-server/client?http://localhost:8080","./app/renderer.js"],
+        //"renderer": "./app/renderer.js",
+        "main": "./app/main.js"
     };
 
     /**
@@ -52,7 +58,8 @@ var clientConfig = function makeWebpackClientConfig() {
 
         // Filename for entry points
         // Only adds hash in build mode
-        filename: isProd ? '[name].[hash].js' : '[name].bundle.js',
+        filename: isProd ? '[name].[hash].js' : '[name].js',
+        // filename: isProd ? '[name].[hash].js' : '[name].bundle.js',
 
         // Filename for non-entry points
         // Only adds hash in build mode
@@ -178,16 +185,41 @@ var clientConfig = function makeWebpackClientConfig() {
         // Reference: https://github.com/ampedandwired/html-webpack-plugin
         // Render index.html
         config.plugins.push(
-            new HtmlWebpackPlugin({
-                template: './electron/index.html',
-                //inject: 'head'
-                inject: 'body'
-            }),
+            /*new HtmlWebpackPlugin({
+             template: './app/index.html',
+             //inject: 'head'
+             inject: 'body'
+             }),*/
 
             // Reference: https://github.com/webpack/extract-text-webpack-plugin
             // Extract css files
             // Disabled when in test mode or not in build mode
-            new ExtractTextPlugin('[name].[hash].css', {disable: !isProd})
+            new ExtractTextPlugin('[name].[hash].css', {disable: !isProd}),
+            new CopyWebpackPlugin([{
+                from: __dirname + '/app/package.json',
+                to: 'package.json'
+            }]),new CopyWebpackPlugin([{
+                from: __dirname + '/app/index.html',
+                to: 'index.html'
+            }]),new ElectronPlugin({
+                relaunchPathMatch: "./app",
+                path: "./dist"
+            })/*
+             ,
+             new CopyWebpackPlugin([{
+             from: __dirname + '/app/scripts/main.js',
+             to: 'main.js'
+             }])
+            new CopyWebpackPlugin([{
+                from: __dirname + '/app/renderer.js',
+                to: 'renderer.js'
+            }]),
+            new ElectronConnectWebpackPlugin({
+                path: __dirname,
+                logLevel: 1
+            }),*/
+
+
         )
     }
 
@@ -235,30 +267,84 @@ var clientConfig = function makeWebpackClientConfig() {
         outputPath: "./dist"
     };
 
+    config.target = "electron-renderer";
+
     return config;
 }();
 
-var serverConfig = function makeWebpackServerConfig() {
+var rendererConfig = function makeWebpackRendererConfig() {
 
     return {
         entry: {
-            "main": "./electron/main.js",
-            "renderer": "./electron/renderer.js"
+            //"main": "./app/main.js",
+            //"renderer": ["webpack-dev-server/client?http://localhost:8080","./app/renderer.js"]
+            "renderer": "./app/renderer.js"
         },
         output: {
-            path:  __dirname + "/dist",
+            path: __dirname + "/dist",
             filename: "[name].js"
+        },
+        // Initialize module
+        module: {
+            preLoaders: [],
+            loaders: [
+                /*{
+                 // JS LOADER
+                 // Reference: https://github.com/babel/babel-loader
+                 // Transpile .js files using babel-loader
+                 // Compiles ES6 and ES7 into ES5 code
+                 test: /\.js$/,
+                 loader: 'babel',
+                 exclude: /node_modules/
+                 },*/ {
+                    // CSS LOADER
+                    // Reference: https://github.com/webpack/css-loader
+                    // Allow loading css through js
+                    //
+                    // Reference: https://github.com/postcss/postcss-loader
+                    // Postprocess your css with PostCSS plugins
+                    test: /\.css|scss$/,
+                    // Reference: https://github.com/webpack/extract-text-webpack-plugin
+                    // Extract css files in production builds
+                    //
+                    // Reference: https://github.com/webpack/style-loader
+                    // Use style-loader in development.
+                    loader: isTest ? 'null' : ExtractTextPlugin.extract('style-loader', 'css-loader?sourceMap!sass?postcss-loader')
+                }, {
+                    // ASSET LOADER
+                    // Reference: https://github.com/webpack/file-loader
+                    // Copy png, jpg, jpeg, gif, svg, woff, woff2, ttf, eot files to output
+                    // Rename the file using the asset hash
+                    // Pass along the updated reference to your code
+                    // You can add here any file extension you want to get copied to your output
+                    //test: /\.(png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot)$/,
+                    //loader: 'file'
+                    test: /\.(jpe?g|png|gif|svg|eot|woff|ttf|svg|woff2)$/, loader: "file?name=[name].[ext]"
+                }, {
+                    // HTML LOADER
+                    // Reference: https://github.com/webpack/raw-loader
+                    // Allow loading html through js
+                    test: /\.html$/,
+                    loader: 'raw'
+                }]
+        },
+        resolve: {
+            modulesDirectories: [
+                "./node_modules",
+                "./app"
+            ]
         },
         plugins: [
             new ElectronPlugin({
-                relaunchPathMatch: "./electron",
+                relaunchPathMatch: "./app",
                 path: "dist"
             }),
             new CopyWebpackPlugin([{
-                from: __dirname + '/electron/package.json',
+                from: __dirname + '/app/package.json',
                 to: './'
             }]),
-            new WriteFilePlugin()
+            new WriteFilePlugin(),
+            new ExtractTextPlugin('[name].[hash].css', {disable: !isProd})
         ],
         devServer: {
             outputPath: __dirname + '/dist'
@@ -268,4 +354,4 @@ var serverConfig = function makeWebpackServerConfig() {
 
 }();
 
-module.exports = [clientConfig, serverConfig];
+module.exports = [clientConfig];

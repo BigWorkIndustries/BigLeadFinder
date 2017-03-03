@@ -1,4 +1,5 @@
 const electron = require('electron')
+//require('electron-reload')(process.cwd() + '/dist');
 // Module to control application life.
 const app = electron.app
 // Module to create native browser window.
@@ -10,18 +11,12 @@ const url = require('url')
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow
+//var client = require('electron-connect').client;
+
 
 function createWindow () {
   // Create the browser window.
   mainWindow = new BrowserWindow({width: 1500, height: 1000})
-
-  /*setTimeout(function(){
-    mainWindow.loadURL(url.format({
-      pathname: process.cwd() + '/dist/index.html',
-      protocol: 'file:',
-      slashes: false
-    }))
-  },7000);*/
 
   mainWindow.loadURL(url.format({
     pathname: process.cwd() + '/dist/index.html',
@@ -29,23 +24,8 @@ function createWindow () {
     slashes: false
   }))
 
-  /*
-   mainWindow.loadURL(url.format({
-   pathname: path.join(__dirname, 'index.html'),
-   protocol: 'file:',
-   slashes: true
-   }))
-  */
-
-
-  /*
-  mainWindow.loadURL(url.format({
-    host:'localhost',
-    pathname: 'index.html',
-    port:8080,
-    protocol: 'http:',
-    slashes: true
-  })) */
+  // Connect to server process
+  //client.create(mainWindow);
 
   // Open the DevTools.
   mainWindow.webContents.openDevTools()
@@ -56,6 +36,7 @@ function createWindow () {
     // in an array if your app supports multi windows, this is the time
     // when you should delete the corresponding element.
     mainWindow = null
+
   })
 }
 
@@ -68,9 +49,11 @@ app.on('ready', createWindow)
 app.on('window-all-closed', function () {
   // On OS X it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
+
   if (process.platform !== 'darwin') {
     app.quit()
   }
+
 })
 
 app.on('activate', function () {

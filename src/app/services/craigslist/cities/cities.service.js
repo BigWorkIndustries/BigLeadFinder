@@ -7,12 +7,35 @@
     var MODULE_NAME = 'lf.cities.service';
 
     angular.module(MODULE_NAME,[
-    ]).service('lfCitiesService', Service);
+    ]).config(Config).service('lfCitiesService', Service);
 
     /** @ngInject */
-    function Service($rootScope,$log,$q) {
+    function Config(remoteProvider){
+        //const Nightmare = require('nightmare');
+        //var nightmare = Nightmare({ show: true });
+        remoteProvider.register('nightmare');
+        remoteProvider.register('electron');
+    }
+
+    /** @ngInject */
+    function Service($rootScope,$log,$q,nightmare,electron) {
 
         var service = {};
+
+        var browser = nightmare({ show: true, electronPath: electron.app.getPath('exe')});
+
+        service.testNightmare = function () {
+
+            browser.goto('https://www.craigslist.org')
+                .end()
+                .then(function (result) {
+                    $log.debug('result: ' + JSON.stringify(result,null,2));
+                })
+                .catch(function (error) {
+                    $log.error('error:', error);
+                });
+
+        }
 
         service.updateCities = function (completion) {
 
