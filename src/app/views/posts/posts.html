@@ -1,0 +1,35 @@
+<div id="skus-container">
+
+
+    <div layout="row" width="100%">
+        <div layout="column" flex="50">
+            <div class="md-display-1">Posts</div>
+        </div>
+        <div layout="column" layout-align="end end" flex="50">
+            <div layout="row" flex>
+                <md-button ng-click="refreshPosts()" class="md-primary md-raised">Refresh Posts</md-button>
+                <md-button ng-click="updatePosts()" class="md-secondary md-raised">Update Posts</md-button>
+                <md-button ng-click="clearPosts()" class="md-warn md-raised">Clear Posts</md-button>
+            </div>
+
+        </div>
+    </div>
+    <md-divider>
+        <md-card>
+
+            <table datatable="ng" dt-options="dtOptions" dt-column-defs="dtColumnDefs" class="mdl-data-table dt-left">
+                <thead>
+                <tr>
+                    <th>TITLE</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr ng-repeat="item in data">
+                    <td>{{ item.title }}</td>
+                </tr>
+                </tbody>
+            </table>
+
+        </md-card>
+
+</div>

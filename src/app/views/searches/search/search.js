@@ -1,25 +1,20 @@
 (function(){
     'use strict';
 
-    var MODULE_NAME = 'app.views.dashboard';
+    var MODULE_NAME = 'app.views.search';
     require('angular-ui-router');
+    require('./search.scss');
 
     angular.module(MODULE_NAME,[
         'ui.router'
-    ]).config(Config).controller('DashboardCtrl',Controller);
+    ]).config(Config).controller('SearchCtrl',Controller);
 
     /* @ngInject */
     function Controller($scope,$log,AppServices) {
 
-        $scope.cities = function() {
-
-            AppServices.cl.cities.updateCities();
-
-        };
-
         var Init = function () {
 
-        }
+        };
 
         Init();
 
@@ -28,17 +23,14 @@
     /* @ngInject */
     function Config($stateProvider) {
         $stateProvider
-            .state('app.dashboard', {
-                url: '/dashboard',
+            .state('app.search', {
+                url: '/search',
                 views: {
                     'container@': {
-                        template: require('./dashboard.html'),
-                        controller: 'DashboardCtrl',
+                        template: require('./search.html'),
+                        controller: 'SearchCtrl',
                         controllerAs: 'vm'
                     }
-                },
-                ncyBreadcrumb: {
-                    label: 'Dashboard'
                 }
             });
     };

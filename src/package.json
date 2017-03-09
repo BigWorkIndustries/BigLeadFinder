@@ -9,7 +9,9 @@
     "dev": "webpack-dev-server --history-api-fallback --progress --host 0.0.0.0",
     "devX": "webpack --progress --watch",
     "clear-dist": "rm -Rf ./dist/*",
-    "copy-index": "cp ./electron/index.html ./dist/"
+    "copy-index": "cp ./electron/index.html ./dist/",
+    "test": "karma start",
+    "test-watch": "karma start --auto-watch --no-single-run"
   },
   "repository": "https://github.com/electron/electron-quick-start",
   "keywords": [
@@ -25,8 +27,10 @@
     "angular": "^1.5.0",
     "angular-animate": "^1.5.0",
     "angular-aria": "^1.5.0",
+    "angular-breadcrumb": "^0.5.0",
     "angular-datatables": "^0.5.6",
     "angular-electron": "^0.2.1",
+    "angular-local-storage": "^0.5.2",
     "angular-material": "^1.1.1",
     "angular-material-sidenav": "^0.1.1",
     "angular-mocks": "^1.5.0",
@@ -35,9 +39,12 @@
     "angular-ui-router": "^0.3.2",
     "artoo-js": "^0.3.4",
     "autoprefixer": "^6.0.3",
+    "bootstrap": "^3.3.7",
+    "co": "^4.6.0",
     "copy-webpack-plugin": "^4.0.1",
     "css-loader": "^0.23.0",
     "datatables.net": "^1.10.13",
+    "devtron": "^1.4.0",
     "electron": "^1.4.1",
     "electron-connect": "^0.6.1",
     "electron-connect-webpack-plugin": "^0.1.1",
@@ -62,9 +69,11 @@
     "karma-webpack": "^1.7.0",
     "material-design-lite": "^1.3.0",
     "ng-annotate-webpack-plugin": "^0.1.3",
+    "ngprogress": "^1.1.1",
     "node-libs-browser": "^2.0.0",
     "node-sass": "^4.5.0",
     "null-loader": "^0.1.1",
+    "phantomjs": "^2.1.7",
     "postcss-loader": "^1.1.1",
     "raw-loader": "^0.5.1",
     "sass-loader": "^4.1.1",
@@ -77,6 +86,11 @@
     "write-file-webpack-plugin": "^3.4.2"
   },
   "dependencies": {
-    "nightmare": "^2.10.0"
+    "angular-pouchdb": "^5.0.0",
+    "electron-debug": "^1.1.0",
+    "nightmare": "^2.10.0",
+    "nightmare-window-manager": "^0.2.2",
+    "pouchdb-browser": "^6.1.2",
+    "pouchdb-find": "^0.10.5"
   }
 }
