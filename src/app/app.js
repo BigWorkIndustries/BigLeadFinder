@@ -2,6 +2,7 @@
     'use strict';
 
     require('angular-material/angular-material.css');
+    require('webpack-material-design-icons');
 
     window.$ = window.jQuery = require('jquery');
     window._ = require('underscore');
@@ -19,6 +20,8 @@
     require('./views/sign-in/sign-in');
     require('./views/posts/posts');
     require('./views/searches/searches');
+    require('./views/responses/responses');
+    require('./views/settings/settings');
 
     require('./services/app.services');
 
@@ -39,6 +42,8 @@
         'app.views.cities',
         'app.views.posts',
         'app.views.searches',
+        'app.views.responses',
+        'app.views.settings',
         // App Services,
         'app.services'
     ]).constant('$',
@@ -55,10 +60,13 @@
         $log.debug('Electron v' + process.versions.electron);
 
         AppServices.db.initDb();
+        AppServices.api.posts.createIndexes();
+        AppServices.api.settings.seedDefaultSettings();
+        AppServices.api.responses.seedResponse();
 
         AppServices.api.searches.find().then(function(searches){
 
-            //$log.debug('searches.find(): ' + JSON.stringify(searches,null,2));
+            // $log.debug('searches.find(): ' + JSON.stringify(searches,null,2));
             if (!searches || !searches.docs || searches.docs.length < 1) {
 
                 AppServices.api.searches.create('ios',['sof','cpg']);
