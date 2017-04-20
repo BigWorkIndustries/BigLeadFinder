@@ -14,110 +14,105 @@
 
     require('./posts.scss');
 
-    require('directives/post-detail/post-detail.directive');
+    require('directives/posts/posts.directive');
 
     angular.module(MODULE_NAME,[
         'ui.router',
         'datatables',
-        'app.post-detail.directive'
+        'app.posts.directive'
     ]).config(Config).controller('PostsCtrl',Controller);
 
     /* @ngInject */
-    function Controller($rootScope,$scope,$log, AppServices, DTOptionsBuilder, DTColumnDefBuilder) {
-        $scope.post = {}
-        function rowCallback(nRow, aData, iDisplayIndex, iDisplayIndexFull) {
-            // Unbind first in order to avoid any duplicate handler (see https://github.com/l-lin/angular-datatables/issues/87)
-            $('td', nRow).unbind('click');
-            $('td', nRow).bind('click', function () {
-                $scope.$apply(function () {
-                    $scope.onRowSelect(aData);
-                });
-            });
-            return nRow;
-        }
+    function Controller($rootScope, $scope, $log, $q, $timeout, AppServices, DTOptionsBuilder, DTColumnDefBuilder,$stateParams,search_data) {
 
-        $scope.onRowSelect = function (item) {
+        $scope.posts = {};
+        $scope.search = search_data.docs[0];
 
-            //AppServices.api.posts.openPost(item[0]);
-
-            /*
-            AppServices.api.posts.getPostDetails(item[1]).then(function(post){
-                $scope.post = post;
-                $log.debug('$scope.post: ' + JSON.stringify($scope.post,null,2))
-            }) */
-
-        };
-
-        $scope.data = [];
-
-        /*
-        $scope.$watch('cities',function(){
-            $scope.data = $rootScope.cities;
-        },true)
-        */
-
-        $scope.AppServices = AppServices;
-
-        $scope.dtOptions = DTOptionsBuilder.newOptions()
-            .withPaginationType('simple_numbers')
-            //.withOption('rowCallback', rowCallback)
-            .withOption('searching', true)
-            .withOption('order', [[ 1, "desc" ]]);
-        $scope.dtColumnDefs = [
-            DTColumnDefBuilder.newColumnDef(0).withOption('visible', false),
-            DTColumnDefBuilder.newColumnDef(1).withOption('visible', false),
-            DTColumnDefBuilder.newColumnDef(2).withOption('className', 'mdl-data-table__cell--non-numeric').withOption('width', '500px'),
-            DTColumnDefBuilder.newColumnDef(3).withOption('className', 'mdl-data-table__cell--numeric').withOption('width', '200px')
-
-        ];
-
-        $scope.rejectPost = function(item){
-
-            $log.debug('$scope.rejectPost: ' + JSON.stringify(item,null,2));
-
-        };
-
-        $scope.respondPost = function(item){
-
-            $log.debug('$scope.respondPost: ' + JSON.stringify(item,null,2));
-
-        };
-
-        $scope.openPost = function (item) {
-
-            //$log.debug('$scope.openPost: ' + JSON.stringify(item,null,2));
-            AppServices.api.posts.openPost(item.link);
-        };
-
+/*
         $scope.refreshPosts = function(){
             $rootScope.ngProgress.start();
-            AppServices.api.posts.find().then(function(result){
+            var chain = $q.when();
+
+            for(var key in AppServices.api.posts.states) {
+
+                (function(state) {
+                    //var state = JSON.parse(JSON.stringify(input));
+                    //$log.debug(state);
+
+                    chain.then(function(){
+
+                        return $scope.refreshPostState(state);
+                    });
+
+                })(key)
+
+            }
+
+            chain.then(function(){
+                //$log.debug('complete');
+                $rootScope.ngProgress.complete();
+                $rootScope.ngProgress.reset();
+            });
+        };
+        */
+
+
+        $scope.refreshPostState = function (state) {
+            $rootScope.ngProgress.start();
+
+            AppServices.api.posts.find({state:state,search_id:$stateParams.search_id},{fields:['link','title','state','email']}).then(function(result){
 
                 //$log.debug('AppServices.api.posts.find(): ' + JSON.stringify(result,null,2));
 
                 if (result && result.docs) {
                     //$log.debug('found posts: ' + result.docs.length);
-                    $scope.data = result.docs;
+                    $scope.posts[state] = result.docs;
+
+                    //$log.debug('$scope.posts[' + state + ']: ' + JSON.stringify($scope.posts[state],null,2) );
                 }
 
                 $rootScope.ngProgress.complete();
                 $rootScope.ngProgress.reset();
 
+            }).catch(function(error){
+                $log.debug('$scope.posts[' + state + ']: ERROR: ' + error );
+                $rootScope.ngProgress.complete();
+                $rootScope.ngProgress.reset();
             });
+
+
         };
 
         $scope.updatePosts = function(){
-            $rootScope.ngProgress.start();
-            AppServices.api.posts.updatePosts().then(function(result){
+            //$rootScope.ngProgress.start();
+            AppServices.api.posts.updatePosts($scope.search).then(function(result){
 
                 $log.debug('update posts: ' + result.length);
 
-                $scope.refreshPosts();
-                $rootScope.ngProgress.complete();
-                $rootScope.ngProgress.reset();
+                $timeout(function(){
 
-            },function(){})
+                    $scope.$apply(function(){
+                        $scope.refreshPosts();
+                    });
+                });
+
+                $scope.updateProgress = undefined;
+                $scope.updateCity = '';
+                //$rootScope.ngProgress.complete();
+                //$rootScope.ngProgress.reset();
+
+            },function(error){
+
+                $scope.updateProgress = undefined;
+                $scope.updateCity = '';
+
+            });
         };
+
+        $scope.updateProgress = undefined;
+        //$scope.updateProgress = 50;
+        $scope.updateCity = '';
+
 
         $scope.clearPosts = function(){
             $rootScope.ngProgress.start();
@@ -130,9 +125,27 @@
             },function(){})
         };
 
+        $scope.clearRejectedPosts = function(){
+            $rootScope.ngProgress.start();
+            AppServices.api.posts.remove({state:AppServices.api.posts.states.rejected}).then(function(result){
+
+                $scope.posts[AppServices.api.posts.states.rejected] = [];
+                $rootScope.ngProgress.complete();
+                $rootScope.ngProgress.reset();
+
+            },function(){})
+        };
+
+
         function Init() {
 
-            $scope.refreshPosts();
+            $rootScope.$on($scope.search._id + '-progress',function(event,info){
+
+                $scope.updateProgress = info.progress.percent;
+                $scope.updateCity = info.city.city_name;
+            });
+
+
         }
 
         Init();
@@ -144,7 +157,7 @@
     function Config($stateProvider) {
         $stateProvider
             .state('app.posts', {
-                url: '/posts',
+                url: '/posts/:search_id',
                 views: {
                     'container@': {
                         template: require('./posts.html'),
@@ -154,9 +167,13 @@
                 },
                 ncyBreadcrumb: {
                     label: 'Posts',
-                    parent:'app.dashboard'
+                    parent:'app.searches'
                 },
                 resolve:{
+                    search_data: function ($rootScope,AppServices,$stateParams) {
+                        //$rootScope.ngProgress.start();
+                        return AppServices.api.searches.find({_id:$stateParams.search_id});
+                    }
                 }
             });
     };

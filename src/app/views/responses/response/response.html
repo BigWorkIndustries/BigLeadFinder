@@ -16,17 +16,27 @@
             </md-input-container>
 
             <md-input-container class="md-block">
-                <label>Body</label>
-                <input required name="body" ng-model="response.body">
-                <div ng-messages="response.body.$error">
+                <label>Subject</label>
+                <input required name="subject" ng-model="response.message.subject">
+                <div ng-messages="response.subject.$error">
+                    <div ng-message="required">This is required.</div>
+                </div>
+            </md-input-container>
+
+            <md-input-container class="md-block">
+                <label>Text</label>
+                <textarea required name="text" ng-model="response.message.text" rows="10" md-select-on-focus></textarea>
+                <div ng-messages="response.text.$error">
                     <div ng-message="required">This is required.</div>
                 </div>
             </md-input-container>
 
             <md-input-container class="md-block">
                 <label>Attachment</label>
-                <div class="dropzone" options="dzOptions" callbacks="dzCallbacks" methods="dzMethods" ng-dropzone></div>
+                <input name="attachment" ng-model="response.message.attachments[0].filename" disabled>
             </md-input-container>
+
+            <div class="dropzone" id="responseAttachmentDropzone" options="dzOptions" callbacks="dzCallbacks" methods="dzMethods" ng-dropzone></div>
 
             <div>
                 <md-button ng-click="updateResponse(response)" type="submit" class="md-raised md-primary" ng-disabled="responseForm.$invalid">Save</md-button>

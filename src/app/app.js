@@ -53,35 +53,30 @@
     ).run(Run).config(Config).config(Theme)
 
     /* @ngInject */
-    function Run($rootScope,$log,process,AppServices){
+    function Run($rootScope,$log, $mdToast,process,AppServices){
 
         $log.debug('Node v' + process.versions.node);
         $log.debug('Chrome v' + process.versions.chrome);
         $log.debug('Electron v' + process.versions.electron);
 
-        AppServices.db.initDb();
-        AppServices.api.posts.createIndexes();
-        AppServices.api.settings.seedDefaultSettings();
-        AppServices.api.responses.seedResponse();
+        AppServices.seed();
 
-        AppServices.api.searches.find().then(function(searches){
-
-            // $log.debug('searches.find(): ' + JSON.stringify(searches,null,2));
-            if (!searches || !searches.docs || searches.docs.length < 1) {
-
-                AppServices.api.searches.create('ios',['sof','cpg']);
-                AppServices.api.searches.create('angular',['sof','cpg']);
-                AppServices.api.searches.create('rails',['sof','cpg']);
-            }
-        });
-
+        $rootScope.showToast = function (message) {
+            $mdToast.show(
+                $mdToast.simple()
+                    .textContent(message)
+                    .position('bottom right')
+                    .hideDelay(3000)
+            );
+        }
     }
 
     /* @ngInject */
     function Config($qProvider,$urlRouterProvider) {
 
+
         $qProvider.errorOnUnhandledRejections(false);
-        $urlRouterProvider.otherwise('/posts');
+        $urlRouterProvider.otherwise('/searches');
     }
 
     /* @ngInject */

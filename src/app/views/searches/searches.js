@@ -22,52 +22,28 @@
     ]).config(Config).controller('SearchesCtrl',Controller);
 
     /* @ngInject */
-    function Controller($rootScope,$scope,$log, AppServices, DTOptionsBuilder, DTColumnDefBuilder) {
+    function Controller($rootScope,$scope,$log,$state, AppServices, DTOptionsBuilder, DTColumnDefBuilder) {
 
-        function rowCallback(nRow, aData, iDisplayIndex, iDisplayIndexFull) {
-            // Unbind first in order to avoid any duplicate handler (see https://github.com/l-lin/angular-datatables/issues/87)
-            $('td', nRow).unbind('click');
-            $('td', nRow).bind('click', function () {
-                $scope.$apply(function () {
-                    $scope.onRowSelect(aData);
-                });
-            });
-            return nRow;
-        }
-
-        $scope.onRowSelect = function (item) {
-
-        };
-
-        $scope.data = [];
-
-        /*
-        $scope.$watch('cities',function(){
-            $scope.data = $rootScope.cities;
-        },true)
-        */
-
-        $scope.AppServices = AppServices;
+        $scope.searches = [];
 
         $scope.dtOptions = DTOptionsBuilder.newOptions()
             .withPaginationType('simple_numbers')
-            .withOption('rowCallback', rowCallback)
             .withOption('searching', false)
             .withOption('order', [[ 0, "asc" ]]);
         $scope.dtColumnDefs = [
             DTColumnDefBuilder.newColumnDef(0).withOption('className', 'mdl-data-table__cell--non-numeric'),
-            DTColumnDefBuilder.newColumnDef(1).withOption('className', 'mdl-data-table__cell--non-numeric'),
+            DTColumnDefBuilder.newColumnDef(1).withOption('className', 'mdl-data-table__cell--non-numeric').withOption('width', '280px'),
         ];
 
         $scope.refreshSearches = function(){
             $rootScope.ngProgress.start();
-            AppServices.api.searches.find().then(function(result){
+            AppServices.api.searches.find({}).then(function(result){
 
                 //$log.debug('AppServices.api.posts.find(): ' + JSON.stringify(result,null,2));
 
                 if (result && result.docs) {
                     //$log.debug('found searches: ' + result.docs.length);
-                    $scope.data = result.docs;
+                    $scope.searches = result.docs;
                 }
 
                 $rootScope.ngProgress.complete();
@@ -75,6 +51,10 @@
 
             });
         };
+
+        $scope.gotoPosts = function (search) {
+            $state.go('app.posts',{search_id:search._id})
+        }
 
         function Init() {
 

@@ -22,6 +22,12 @@
 
         var service = {};
 
+        service.seed = function () {
+            service.create({_id:'Search_0',name:'iOS', query:'ios', categories:['sof', 'cpg'], default_response:'response_0'});
+            service.create({_id:'Search_1',name:'Angular', query:'angular', categories:['sof', 'cpg'], default_response:'response_0'});
+            service.create({_id:'Search_2',name:'Rails', query:'rails', categories:['sof', 'cpg'], default_response:'response_0'});
+        };
+
         service.find = function (selector) {
             return DB.findDocs('search', selector);
         };
@@ -30,15 +36,11 @@
             return DB.removeDocs('search', selector);
         };
 
-        service.create = function (query,categories) {
+        service.create = function (search) {
 
-            var search = {};
+            return DB.create('search', search);
+        };
 
-            search.categories = categories;
-            search.query = query;
-
-            return DB.create('search',search);
-        }
 
         return service;
     };

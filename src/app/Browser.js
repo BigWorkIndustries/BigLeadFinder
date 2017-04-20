@@ -19,7 +19,7 @@
 
     Service.browserFactory = function (config) {
 
-        var timeout = 60000;
+        var timeout = 120000;
         var defaultConfig = {
             show: false,
             electronPath: electron.app.getPath('exe'),
@@ -28,7 +28,8 @@
             },
             gotoTimeout: timeout,
             loadTimeout: timeout,
-            executionTimeout: timeout
+            executionTimeout: timeout,
+            waitTimeout:timeout
         };
 
         var browserConfig = defaultConfig;
@@ -41,29 +42,26 @@
         return browser;
     };
 
+    Service.isWindowOpen = function (browser) {
+
+        browser.evaluate_now(function(done){
+            return document;
+        },function(){
+            console.log('done!')
+        }).then(
+            function(doc){
+                console.log('doc: ' + doc)
+            }
+        );
+    };
+
     Service.getCities = function (callback) {
 
         var browser = Service.browserFactory();
 
         var sites_url = 'https://www.craigslist.org/about/sites';
         var jqueryPath = path.resolve('../src/node_modules/jquery/dist/jquery.js');
-        //var jq = fs.readFileSync(jqueryPath, "utf8");
 
-        /*
-        browser.on('did-finish-load', function () {
-            console.log(url + ' Did finish loading');
-
-            //browser.inject('js','jquery.js')
-
-        });
-        */
-
-        //.inject('js',jqueryPath)
-        /*
-         .evaluate(function(_jq){
-         window.$ = window.jQuery = eval(_jq);
-         },jq)
-        */
         browser
             .goto(sites_url)
             .inject('js',jqueryPath)
@@ -78,11 +76,25 @@
 
                     var host_parts = element.hostname.split('.');
 
+                    /* if (element.href === 'http://miami.craigslist.org/brw/') {
+                        cities.push({
+                            href:element.href,
+                            host:element.host,
+                            path:element.pathname,
+                            _id:host_parts[0],
+                            city_name:element.innerText
+                        });
+                    } */
+
                     cities.push({
                         href:element.href,
+                        host:element.host,
+                        path:element.pathname,
                         _id:host_parts[0],
                         city_name:element.innerText
                     });
+
+
 
                 });
 
@@ -94,7 +106,7 @@
             })
             .end()
             .then(function (result) {
-                console.log('Browser.getCities end()');
+                //console.log('Browser.getCities end()');
                 //console.log('result: ' + JSON.stringify(result,null,2));
                 callback(result,null);
 
@@ -108,27 +120,27 @@
 
     };
 
-    Service.openPost = function (bounds,postUrl,emailCallback,completionCallback) {
+    Service.openPost = function (bounds,postUrl,emailCallback,completionCallback,newWindow) {
 
-        console.log('openPost: ' + postUrl)
+        //console.log('openPost: ' + postUrl)
         var jqueryPath = path.resolve('../src/node_modules/jquery/dist/jquery.js');
         var noConflictPath = path.resolve('./app/jQueryNoConflict.js');
 
         //var qPath = path.resolve('../src/node_modules/q/q.js');
 
-        var windows = BrowserWindow.getAllWindows()
-        console.log('windows: ' + windows.length)
+        //var windows = BrowserWindow.getAllWindows()
+
+        if (Service.visibleBrowser && newWindow) {
+            //console.log('Service.visibleBrowser: ' + Service.visibleBrowser)
+            //Service.isWindowOpen(Service.visibleBrowser)
+            //console.log('Service.visibleBrowser.running: ' + Service.visibleBrowser.running)
+
+            Service.visibleBrowser._endNow();
+            Service.visibleBrowser = null;
+
+        }
 
         if (!Service.visibleBrowser) {
-
-            /*
-             {
-             "x": 0,
-             "y": 23,
-             "width": 1200,
-             "height": 800
-             }
-            * */
 
             var positionConfig = Object.assign(bounds,{x:bounds.x + bounds.width,width:bounds.width * .666})
             var config = Object.assign({show:true,openDevTools:false},positionConfig)
@@ -136,17 +148,7 @@
             Service.visibleBrowser = Service.browserFactory(config);
 
             //console.log('Service.visibleBrowser: ' + JSON.stringify(Service.visibleBrowser,null,2));
-
         }
-
-        //console.log('Service.visibleBrowser.windows(): ' + JSON.stringify(Service.visibleBrowser.windows(),null,2));
-
-        //console.log('Service.visibleBrowser: ' + JSON.stringify(Service.visibleBrowser,null,2));
-
-        //var Positioner = require('electron-positioner');
-
-
-
 
         Service.visibleBrowser
             .goto(postUrl)
@@ -170,9 +172,6 @@
             }).catch(function(error){
                 console.log(error)
             })
-
-
-
     };
 
     Service.getPostDetails = function (postUrl,completionCallback) {
