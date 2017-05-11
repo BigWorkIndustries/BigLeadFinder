@@ -38,10 +38,10 @@
 
             var defer = $q.defer();
 
-            $log.debug('$scope.state: ' + $scope.state);
-            $log.debug('$scope.search: ' + JSON.stringify($scope.search,null,1));
+            //$log.debug('$scope.state: ' + $scope.state);
+            //$log.debug('$scope.search: ' + JSON.stringify($scope.search,null,1));
 
-            AppServices.api.posts.find({state:$scope.state,search_id:$scope.search.id},{fields:['_id','publish_date','link','email','title','description','search_id','state']}).then(function(result){
+            AppServices.api.posts.find({state:$scope.state,search_id:$scope.search._id},{fields:['_id','publish_date','link','email','title','description','search_id','state']}).then(function(result){
 
                 //$log.debug('AppServices.api.posts.find(): ' + JSON.stringify(result,null,2));
 
@@ -158,16 +158,19 @@
 
         $scope.updateState = function(_id,state){
 
+            //$log.debug('$scope.updateState: ' + _id + ' ' + state);
+
             AppServices.api.posts.findByID(_id).then(function(item){
 
+                //$log.debug('AppServices.api.posts.findByID: ' + JSON.stringify(item,null,2));
                 AppServices.api.posts.updateState(item._id,state).then(function(result){
-                    $log.debug('$scope.rejectPost: ' + JSON.stringify(result,null,2));
+                    //$log.debug('$scope.rejectPost: ' + JSON.stringify(result,null,2));
 
                     //$scope.refreshPosts()
                     $scope.dtInstance.reloadData();
 
                 }).catch(function(error){
-                    $log.error('$scope.updateState: ' +state + ' - ' + error);
+                    //$log.error('$scope.updateState: ' +state + ' - ' + error);
                 });
 
             });
@@ -231,12 +234,21 @@
         };
 
 
+        $scope.reloadTable = function(){
+            //$scope.refreshPosts().then()
+            $scope.dtInstance.reloadData();
+        }
 
 
         function Init() {
 
-           // $scope.refreshPosts();
+            if ($scope.state == AppServices.api.posts.states.created) {
+                $rootScope.$on($scope.search._id + '-found',function(event,info){
 
+                    $scope.dtInstance.reloadData();
+                });
+
+            }
         }
 
         Init();

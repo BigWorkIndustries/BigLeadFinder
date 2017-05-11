@@ -18,7 +18,8 @@
 
     angular.module(MODULE_NAME,[
         'ui.router',
-        'datatables'
+        'datatables',
+        'app.views.search'
     ]).config(Config).controller('SearchesCtrl',Controller);
 
     /* @ngInject */
@@ -39,7 +40,7 @@
             $rootScope.ngProgress.start();
             AppServices.api.searches.find({}).then(function(result){
 
-                //$log.debug('AppServices.api.posts.find(): ' + JSON.stringify(result,null,2));
+                //$log.debug('AppServices.api.searches.find(): ' + JSON.stringify(result,null,2));
 
                 if (result && result.docs) {
                     //$log.debug('found searches: ' + result.docs.length);
@@ -56,6 +57,10 @@
             $state.go('app.posts',{search_id:search._id})
         }
 
+        $scope.editSearch = function (search) {
+            $state.go('app.search',{search_id:search._id})
+        }
+
         function Init() {
 
             $scope.refreshSearches();
@@ -69,8 +74,8 @@
     /* @ngInject */
     function Config($stateProvider) {
         $stateProvider
-            .state('app.searches', {
-                url: '/searches',
+            .state('app.searchlist', {
+                url: '/slist',
                 views: {
                     'container@': {
                         template: require('./searches.html'),
@@ -83,6 +88,7 @@
                     parent:'app.dashboard'
                 },
                 resolve:{
+
                 }
             });
     };

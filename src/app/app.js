@@ -21,7 +21,8 @@
     require('./views/posts/posts');
     require('./views/searches/searches');
     require('./views/responses/responses');
-    require('./views/settings/settings');
+    require('./views/app-settings/app-settings');
+    require('./views/email-settings/email-settings');
 
     require('./services/app.services');
 
@@ -43,7 +44,8 @@
         'app.views.posts',
         'app.views.searches',
         'app.views.responses',
-        'app.views.settings',
+        'app.views.app-settings',
+        'app.views.email-settings',
         // App Services,
         'app.services'
     ]).constant('$',
@@ -72,11 +74,12 @@
     }
 
     /* @ngInject */
-    function Config($qProvider,$urlRouterProvider) {
+    function Config($qProvider,$urlRouterProvider,$locationProvider) {
 
 
         $qProvider.errorOnUnhandledRejections(false);
-        $urlRouterProvider.otherwise('/searches');
+        $urlRouterProvider.otherwise('/slist');
+        //$locationProvider.html5Mode(true);
     }
 
     /* @ngInject */

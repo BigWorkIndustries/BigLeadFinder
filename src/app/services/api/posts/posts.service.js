@@ -7,9 +7,11 @@
     var MODULE_NAME = 'api.posts';
 
     require('services/db/db.service');
+    require('services/api/base/base.factory');
 
     angular.module(MODULE_NAME, [
-        'db.service'
+        'db.service',
+        'api.service_base'
     ]).config(Config).service('PostsService', Service);
 
     /** @ngInject */
@@ -18,11 +20,19 @@
     }
 
     /** @ngInject */
-    function Service($rootScope, $log, $q, Browser, DB, _, $, currentWindow, CitiesService) {
+    function Service($rootScope, $log, $q, Browser, DB, _, $,ServiceBase, currentWindow, CitiesService) {
 
-        var service = {};
+        var service = function(){
+            ServiceBase.constructor.call(this);
 
-        service.seed = function () {
+            //this.type = 'post';
+            //Object.freeze(this.states);
+        };
+
+        service.prototype = Object.create(ServiceBase.constructor.prototype);
+        service.prototype.type = 'post';
+
+        service.prototype.seed = function () {
             DB.createIndex('_post_link_type', ['link', 'type']);
             DB.createIndex('_post_query_id', ['query_id']);
             DB.createIndex('_post_state_search', ['state','search_id']);
@@ -37,26 +47,25 @@
          archived
          error
          */
+        service.prototype.states = {};
+        service.prototype.states.created = 'created';
+        service.prototype.states.responded = 'responded';
+        service.prototype.states.rejected = 'rejected';
+        service.prototype.states.archived = 'archived';
+        service.prototype.states.error = 'error';
 
-        service.states = {};
-        service.states.created = 'created';
-        service.states.responded = 'responded';
-        service.states.rejected = 'rejected';
-        service.states.archived = 'archived';
-        service.states.error = 'error';
-        Object.freeze(service.states);
 
-        service.updateState = function (_id, newState) {
+        service.prototype.updateState = function (_id, newState) {
             var deferred = $q.defer();
 
-            service.find({_id: _id}).then(function (result) {
+            service.prototype.find({_id: _id}).then(function (result) {
 
                 if (result && result.docs && result.docs.length > 0) {
                     var post = result.docs[0];
 
                     post.state = newState;
 
-                    service.create(post).then(function (create_result) {
+                    service.prototype.create(post).then(function (create_result) {
 
                         deferred.resolve(create_result)
                     })
@@ -75,6 +84,7 @@
             return deferred.promise;
         };
 
+        /*
         service.create = function (item) {
 
             return DB.create('post', item);
@@ -87,12 +97,14 @@
         service.findByID = function (_id, options) {
             return DB.findByID('post', _id, options);
         };
+         service.remove = function (selector) {
+         return DB.removeDocs('post', selector);
+         };
+        */
 
-        service.remove = function (selector) {
-            return DB.removeDocs('post', selector);
-        };
 
-        service.updatePosts = function (search) {
+
+        service.prototype.updatePosts = function (search) {
 
             $rootScope.showToast('Update Posts Start');
 
@@ -121,7 +133,7 @@
 
                         chain = chain.then(function (items) {
                             i_current = i_current + 1;
-                            return service.getCityRss(city, cat, search, chain,{total:i_total,current:i_current});
+                            return service.prototype.getCityRss(city, cat, search, chain,{total:i_total,current:i_current});
                         });
 
                     });
@@ -138,7 +150,7 @@
                 chain.then(function () {
 
                     $rootScope.showToast('Update Posts Complete');
-                    return service.find();
+                    return service.prototype.find();
                 });
 
 
@@ -147,7 +159,9 @@
             return chain;
         };
 
-        service.getCityRss = function (city, cat, query, chain, progress) {
+        service.prototype.getCityRss = function (city, cat, query, chain, progress) {
+
+            var self = this;
 
             //$log.debug('service.getCityRss city: ' + JSON.stringify(city, null, 2));
 
@@ -164,13 +178,13 @@
 
             $log.debug('url: ' + url);
 
-            service.find({
+            service.prototype.find({
                 city_id: city._id,
                 search_id: query._id,
                 category_id: cat._id
             }).then(function (result) {
 
-                //$log.debug('service.getCityRss result: ' + JSON.stringify(result, null, 2));
+                $log.debug('service.getCityRss result: ' + JSON.stringify(result, null, 2));
 
                 var existing_posts = (result.docs === undefined) ? [] : result.docs;
 
@@ -204,7 +218,7 @@
                             city_id: city._id,
                             search_id: query._id,
                             category_id: cat._id,
-                            state: service.states.created
+                            state: self.states.created
                         };
 
                         // Let's retain the state for any existing item...
@@ -225,6 +239,12 @@
                     DB.createCollection('post', _items).then(function(result){
 
                         deferred.resolve(result.docs);
+
+                        if (_items.length > 0) {
+                            $rootScope.$broadcast(query._id + '-found',{city:city,cat:cat,query:query,progress:progress});
+                        }
+
+
                     });
 
 
@@ -240,7 +260,7 @@
 
         };
 
-        service.openPost = function (postUrl, newWindow, emailCallback, completionCallback) {
+        service.prototype.openPost = function (postUrl, newWindow, emailCallback, completionCallback) {
 
             if (newWindow === undefined) {
                 newWindow = false;
@@ -297,7 +317,7 @@
             //return deferred.promise;
         };
 
-        service.getPostDetails = function (postUrl) {
+        service.prototype.getPostDetails = function (postUrl) {
 
             $log.debug('Starting getPostDetails: ' + postUrl);
 
@@ -321,7 +341,7 @@
             return deferred.promise;
         };
 
-        return service;
+        return new service();
     };
 
     module.exports = MODULE_NAME;
