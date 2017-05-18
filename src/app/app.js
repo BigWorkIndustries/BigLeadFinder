@@ -8,9 +8,11 @@
     window._ = require('underscore');
 
     require('angular');
-    require('angular-material');
-    require('angular-aria');
     require('angular-animate');
+    require('angular-aria');
+    require('angular-messages');
+
+    require('angular-material');
 
     require('angular-electron');
 
@@ -33,6 +35,7 @@
     angular.module(MODULE_NAME, [
         // Vendor Modules
         'ngMaterial',
+        'ngAnimate',
         'angular-electron',
         //'ngAria',
         //'ngAnimate',
@@ -55,11 +58,13 @@
     ).run(Run).config(Config).config(Theme)
 
     /* @ngInject */
-    function Run($rootScope,$log, $mdToast,process,AppServices){
+    function Run($rootScope,$log, $mdToast,process,AppServices, Process){
 
         $log.debug('Node v' + process.versions.node);
         $log.debug('Chrome v' + process.versions.chrome);
         $log.debug('Electron v' + process.versions.electron);
+        $log.debug('Angular v' + angular.version.full);
+        $log.debug('NODE_ENV: ' + Process.env.NODE_ENV);
 
         AppServices.seed();
 
@@ -74,11 +79,12 @@
     }
 
     /* @ngInject */
-    function Config($qProvider,$urlRouterProvider,$locationProvider) {
+    function Config($qProvider,$urlRouterProvider,$locationProvider,remoteProvider) {
 
 
         $qProvider.errorOnUnhandledRejections(false);
-        $urlRouterProvider.otherwise('/slist');
+        $urlRouterProvider.otherwise('/dashboard');
+        remoteProvider.register('Process', './Process');
         //$locationProvider.html5Mode(true);
     }
 

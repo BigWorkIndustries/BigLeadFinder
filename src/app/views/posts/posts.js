@@ -16,6 +16,7 @@
 
     require('directives/posts/posts.directive');
 
+
     angular.module(MODULE_NAME,[
         'ui.router',
         'datatables',
@@ -28,39 +29,11 @@
         $scope.posts = {};
         $scope.search = search_data.docs[0];
 
-/*
-        $scope.refreshPosts = function(){
-            $rootScope.ngProgress.start();
-            var chain = $q.when();
-
-            for(var key in AppServices.api.posts.states) {
-
-                (function(state) {
-                    //var state = JSON.parse(JSON.stringify(input));
-                    //$log.debug(state);
-
-                    chain.then(function(){
-
-                        return $scope.refreshPostState(state);
-                    });
-
-                })(key)
-
-            }
-
-            chain.then(function(){
-                //$log.debug('complete');
-                $rootScope.ngProgress.complete();
-                $rootScope.ngProgress.reset();
-            });
-        };
-        */
-
 
         $scope.refreshPostState = function (state) {
             $rootScope.ngProgress.start();
 
-            AppServices.api.posts.find({state:state,search_id:$stateParams.search_id},{fields:['link','title','state','email']}).then(function(result){
+            AppServices.api.posts.find({state:state,search_id:$stateParams.search_id},{fields:['link','title','state','email'],limit:30}).then(function(result){
 
                 //$log.debug('AppServices.api.posts.find(): ' + JSON.stringify(result,null,2));
 
@@ -114,19 +87,7 @@
         $scope.updateCity = '';
 
 
-        $scope.clearPosts = function(){
-            $rootScope.ngProgress.start();
-            AppServices.api.posts.remove().then(function(result){
 
-                $scope.data = [];
-                $rootScope.ngProgress.complete();
-                $rootScope.ngProgress.reset();
-
-
-                $state.go('app.searchlist');
-
-            },function(){})
-        };
 
         $scope.clearRejectedPosts = function(){
             $rootScope.ngProgress.start();
@@ -140,11 +101,12 @@
         };
 
 
+
         function Init() {
 
             $rootScope.$on($scope.search._id + '-progress',function(event,info){
 
-                $log.debug(JSON.stringify(info,null,2));
+                //$log.debug(JSON.stringify(info,null,2));
 
                 $scope.updateProgress = info.progress.percent;
                 $scope.updateCity = info.city.city_name;
@@ -156,7 +118,7 @@
         Init();
 
 
-    };
+    }
 
     /* @ngInject */
     function Config($stateProvider) {

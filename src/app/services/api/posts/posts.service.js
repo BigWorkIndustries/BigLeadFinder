@@ -8,10 +8,12 @@
 
     require('services/db/db.service');
     require('services/api/base/base.factory');
+    require('services/api/rejected-posts/rejected-posts.service');
 
     angular.module(MODULE_NAME, [
         'db.service',
-        'api.service_base'
+        'api.service_base',
+        'api.rejected-posts'
     ]).config(Config).service('PostsService', Service);
 
     /** @ngInject */
@@ -20,9 +22,9 @@
     }
 
     /** @ngInject */
-    function Service($rootScope, $log, $q, Browser, DB, _, $,ServiceBase, currentWindow, CitiesService) {
+    function Service($rootScope, $log, $q, Browser, DB, _, $, ServiceBase, currentWindow, CitiesService, RejectedPostsService) {
 
-        var service = function(){
+        var service = function () {
             ServiceBase.constructor.call(this);
 
             //this.type = 'post';
@@ -35,7 +37,7 @@
         service.prototype.seed = function () {
             DB.createIndex('_post_link_type', ['link', 'type']);
             DB.createIndex('_post_query_id', ['query_id']);
-            DB.createIndex('_post_state_search', ['state','search_id']);
+            DB.createIndex('_post_state_search', ['state', 'search_id']);
         };
 
         /*
@@ -63,6 +65,14 @@
                 if (result && result.docs && result.docs.length > 0) {
                     var post = result.docs[0];
 
+                    if (newState == service.prototype.states.rejected) {
+                        RejectedPostsService.markRejected(post._id);
+                    }
+
+                    if (post.state == service.prototype.states.rejected && newState != service.prototype.states.rejected) {
+                        RejectedPostsService.unMarkRejected(post._id);
+                    }
+
                     post.state = newState;
 
                     service.prototype.create(post).then(function (create_result) {
@@ -85,23 +95,22 @@
         };
 
         /*
-        service.create = function (item) {
+         service.create = function (item) {
 
-            return DB.create('post', item);
-        }
+         return DB.create('post', item);
+         }
 
-        service.find = function (selector, options) {
-            return DB.findDocs('post', selector, options);
-        };
+         service.find = function (selector, options) {
+         return DB.findDocs('post', selector, options);
+         };
 
-        service.findByID = function (_id, options) {
-            return DB.findByID('post', _id, options);
-        };
+         service.findByID = function (_id, options) {
+         return DB.findByID('post', _id, options);
+         };
          service.remove = function (selector) {
          return DB.removeDocs('post', selector);
          };
-        */
-
+         */
 
 
         service.prototype.updatePosts = function (search) {
@@ -133,19 +142,22 @@
 
                         chain = chain.then(function (items) {
                             i_current = i_current + 1;
-                            return service.prototype.getCityRss(city, cat, search, chain,{total:i_total,current:i_current});
+                            return service.prototype.getCityRss(city, cat, search, chain, {
+                                total: i_total,
+                                current: i_current
+                            });
                         });
 
                     });
                 });
 
                 /*
-                chain.then(function (items) {
+                 chain.then(function (items) {
 
-                    //$log.debug('AppServices.api.posts.updatePosts(): ' + JSON.stringify(items,null,2));
-                    return DB.createCollection('post', items);
-                });
-                */
+                 //$log.debug('AppServices.api.posts.updatePosts(): ' + JSON.stringify(items,null,2));
+                 return DB.createCollection('post', items);
+                 });
+                 */
 
                 chain.then(function () {
 
@@ -166,7 +178,7 @@
             //$log.debug('service.getCityRss city: ' + JSON.stringify(city, null, 2));
 
             progress.percent = (progress.current / progress.total) * 100;
-            $rootScope.$broadcast(query._id + '-progress',{city:city,cat:cat,query:query,progress:progress});
+            $rootScope.$broadcast(query._id + '-progress', {city: city, cat: cat, query: query, progress: progress});
 
             //progress.percent = (progress.current / progress.total) * 100;
             //chain.notify({city:city,cat:cat,query:query,progress:progress});
@@ -176,7 +188,7 @@
 
             var url = 'https://' + city.host + '/search' + city.path + cat + '?format=rss&query=' + encodeURIComponent(query.query);
 
-            $log.debug('url: ' + url);
+            //$log.debug('url: ' + url);
 
             service.prototype.find({
                 city_id: city._id,
@@ -184,76 +196,83 @@
                 category_id: cat._id
             }).then(function (result) {
 
-                $log.debug('service.getCityRss result: ' + JSON.stringify(result, null, 2));
+                //$log.debug('service.getCityRss result: ' + JSON.stringify(result, null, 2));
 
                 var existing_posts = (result.docs === undefined) ? [] : result.docs;
 
-                $.get(url, function (data) {
-                    var $xml = $(data);
-                    //var xmlDoc = $.parseXML(data);
-                    //var $xml = $(xmlDoc)
-                    //var _items = (items === undefined) ? [] : items;
-                    var _items = [];
-                    $xml.find("item").each(function () {
-                        var $this = $(this);
+                RejectedPostsService.find().then(function (rejected_data) {
 
-                        var link = $this.find("link").first().text();
+                    var rejected_posts = (rejected_data.docs === undefined) ? [] : rejected_data.docs;
 
-                        var a = document.createElement('a');
-                        a.id = 'temp_link';
-                        a.href = link;
-                        var link_parts = a.pathname.split('/');
-                        //$log.debug('link_parts: ' + JSON.stringify(link_parts,null,2));
-                        var filename = link_parts.pop();
-                        var post_id = filename.split('.')[0];
+                    $.get(url, function (data) {
+                        var $xml = $(data);
+                        //var xmlDoc = $.parseXML(data);
+                        //var $xml = $(xmlDoc)
+                        //var _items = (items === undefined) ? [] : items;
+                        var _items = [];
 
-                        $log.debug('title: ' + $this.find("title").first().text());
+                        var xml_items = $xml.find("item");
 
-                        var item = {
-                            _id: post_id,
-                            title: $this.find("title").first().text(),
-                            link: link,
-                            description: $this.find("description").first().text(),
-                            publish_date: $this.find("date").text(),
-                            city_id: city._id,
-                            search_id: query._id,
-                            category_id: cat._id,
-                            state: self.states.created
-                        };
+                        xml_items.each(function () {
 
-                        // Let's retain the state for any existing item...
-                        var existing_item = _.find(existing_posts, {_id: item._id});
+                            var $this = $(this);
+                            var link = $this.find("link").first().text();
+                            var a = document.createElement('a');
+                            a.id = 'temp_link';
+                            a.href = link;
+                            var link_parts = a.pathname.split('/');
+                            var filename = link_parts.pop();
+                            var post_id = filename.split('.')[0];
 
-                        if (existing_item) {
-                            $log.debug('Existing item found, meging...');
-                            item.state = existing_item.state;
-                        }
+                            $log.debug('NEW POST: ' + $this.find("title").first().text());
 
-                        $log.debug('POST:city: [' + city._id + '] ' + JSON.stringify(item, null, 2));
+                            var existing_item = _.find(existing_posts, {_id: post_id});
+                            var rejected_item = _.find(rejected_posts, {post_id: post_id});
 
-                        _items.push(item);
+                            if (existing_item || rejected_item) {
+
+
+                            } else {
+                                var item = {
+                                    _id: post_id,
+                                    title: $this.find("title").first().text(),
+                                    link: link,
+                                    description: $this.find("description").first().text(),
+                                    publish_date: $this.find("date").text(),
+                                    city_id: city._id,
+                                    search_id: query._id,
+                                    category_id: cat._id,
+                                    state: self.states.created
+                                };
+
+                                _items.push(item);
+
+                            }
+
+                            DB.createCollection('post', _items).then(function (result) {
+                                if (_items.length > 0) {
+                                    $rootScope.$broadcast(query._id + '-found', {
+                                        city: city,
+                                        cat: cat,
+                                        query: query,
+                                        progress: progress
+                                    });
+                                }
+                            });
+                        });
+
+                        deferred.resolve(true);
+
+                    }).fail(function (error) {
+                        $log.error('service.getCityRss $.get(): ' + JSON.stringify(error, null, 2));
+                        deferred.reject(error);
                     });
 
-                    $log.debug('items: ' + JSON.stringify(_items,null,2));
 
-                    DB.createCollection('post', _items).then(function(result){
-
-                        deferred.resolve(result.docs);
-
-                        if (_items.length > 0) {
-                            $rootScope.$broadcast(query._id + '-found',{city:city,cat:cat,query:query,progress:progress});
-                        }
-
-
-                    });
-
-
-                }).fail(function(error) {
-
-                    $log.error('service.getCityRss $.get(): ' + JSON.stringify(error,null,2));
                 });
-            }).catch(function(error){
-                $log.error('service.getCityRss service.find(): ' + JSON.stringify(error,null,2));
+            }).catch(function (error) {
+                $log.error('service.getCityRss service.find(): ' + JSON.stringify(error, null, 2));
+                deferred.reject(error)
             });
 
             return deferred.promise;

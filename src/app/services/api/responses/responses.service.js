@@ -7,9 +7,11 @@
     var MODULE_NAME = 'api.responses';
 
     require('services/api/base/base.factory');
+    require('services/api/posts/posts.service');
     require('services/db/db.service');
 
     angular.module(MODULE_NAME, [
+        'api.posts',
         'db.service',
         'api.service_base'
     ]).config(Config).service('ResponsesService', Service);
@@ -22,7 +24,7 @@
     }
 
     /** @ngInject */
-    function Service($rootScope, $log, $q, $interpolate, File, Email, DB, _, $, EmailSettingsService, PostsService, Process, ServiceBase) {
+    function Service($rootScope, $log, $q, $interpolate, File, Email, DB, _, $, AppSettingsService, EmailSettingsService, PostsService, Process, ServiceBase) {
 
         var service = function(){
             ServiceBase.constructor.call(this);
@@ -37,7 +39,7 @@
             var response = {
                 _id: "response_0",
                 name: "Response1",
-                settings_id: 'settings_0',
+                email_settings_id: 'email_settings_0',
                 message: {
                     subject: Process.env.SMTP_SUBJECT,
                     text: Process.env.SMTP_TEXT,
@@ -82,19 +84,19 @@
 
             //$log.debug('response: ' + JSON.stringify(response, null, 2));
 
-            EmailSettingsService.find({_id: response.settings_id}).then(function (result) {
+            EmailSettingsService.find({_id: response.email_settings_id}).then(function (result) {
 
                 //$log.debug('settings results: ' + JSON.stringify(result, null, 2));
 
                 if (result && result.docs && result.docs.length > 0) {
-                    var settings = result.docs[0];
+                    var email_settings = result.docs[0];
 
-                    response.message.from = settings.email.from;
+                    response.message.from = email_settings.email.from;
 
-                    if (settings.email.test_mode === false) {
+                    if (AppSettingsService.defaultSettings.test_mode === false) {
                         response.message.to = post.email;
                     } else {
-                        response.message.to = settings.email.test_mode_email;
+                        response.message.to = AppSettingsService.defaultSettings.test_mode_email;
                     }
 
                     // TODO: parse and replace the response for tokens from the post
@@ -107,7 +109,7 @@
 
                     //$log.debug('response.message: ' + JSON.stringify(response.message, null, 2));
 
-                    Email.sendEmail(response.message, settings.email.smtp, function (err, info) {
+                    Email.sendEmail(response.message, email_settings.email.smtp, function (err, info) {
 
                         if (err) {
 
@@ -143,6 +145,43 @@
             });
         };
 
+        service.prototype.respondPost = function(_id,response_id){
+
+            //$log.debug('$scope.respondPost: ' + JSON.stringify(item,null,2));
+
+            var deferred = $q.defer();
+
+            PostsService.findByID(_id).then(function(item){
+
+                // TODO: Change this to an instance of the default response or let it get set per post...
+                service.prototype.findByID(response_id).then(function(response){
+
+                    //$log.debug('result: ' + JSON.stringify(result,null,2));
+
+                    service.prototype.sendResponse(item,response,function(err,result,post){
+
+                        if (err) {
+                            $log.error(err)
+                            deferred.reject(error)
+                        }
+
+                        if (result) {
+                            //$log.debug('$scope.respondPost: ' + JSON.stringify(result,null,2));
+                        }
+
+                        if (post) {
+                            $log.debug('post: ' + JSON.stringify(post,null,2));
+                        }
+
+                        deferred.resolve(post);
+
+                    })
+                });
+
+            });
+
+            return deferred.promise;
+        };
         /*
         service.find = function (selector) {
             return DB.findDocs('response', selector);

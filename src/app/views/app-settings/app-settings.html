@@ -4,6 +4,10 @@
     </div>
     <div layout="column" layout-align="end end" flex="50">
         <div layout="row" flex>
+
+            <md-button ng-click="exportData()" class="md-primary md-raised">Export Data</md-button>
+            <input id="fileInput" type="file" onchange="angular.element(this).scope().fileNameChanged(this)" style="display: none;">
+            <md-button ng-click="importData()" class="md-secondary md-raised">Import Data</md-button>
             <md-button ng-click="clearAllData()" class="md-warn md-raised">Clear All Data</md-button>
 
         </div>
